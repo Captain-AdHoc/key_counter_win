@@ -22,6 +22,7 @@ namespace
   std::atomic<unsigned long long> g_key_count{0};
   std::atomic<bool> g_running{true};
   HHOOK g_hook = nullptr;
+  DWORD g_main_thread_id = 0;
 
   std::mutex g_samples_mutex;
   std::deque<time_point> g_key_samples;
@@ -175,7 +176,8 @@ namespace
       case CTRL_LOGOFF_EVENT:
       case CTRL_SHUTDOWN_EVENT:
         g_running = false;
-        PostQuitMessage(0);
+        //PostQuitMessage(0);
+        PostThreadMessage(g_main_thread_id, WM_QUIT, 0, 0);
         return TRUE;
       default:
         return FALSE;
@@ -185,6 +187,7 @@ namespace
 
 int main()
 {
+  g_main_thread_id = GetCurrentThreadId();
   ConsoleState console;
   console.handle = GetStdHandle(STD_OUTPUT_HANDLE);
   if (console.handle == INVALID_HANDLE_VALUE)
@@ -224,8 +227,13 @@ int main()
   });
 
   MSG msg{};
-  while (g_running && GetMessage(&msg, nullptr, 0, 0) > 0)
+  //while (g_running && GetMessage(&msg, nullptr, 0, 0) > 0)
+  while (true)
   {
+    const BOOL result = GetMessage(&msg, nullptr, 0, 0);
+    if (result <= 0)
+      break;
+    
     TranslateMessage(&msg);
     DispatchMessage(&msg);
   }
