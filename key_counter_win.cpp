@@ -71,25 +71,25 @@ namespace
     SetConsoleTextAttribute(hconsole, attributes);
   }
 
-  void write_text(HANDLE hconsole, SHORT col, SHORT row, const std::string& text, WORD attributes)
+  void write_text(HANDLE hconsole, SHORT col, SHORT row, const std::wstring& text, WORD attributes)
   {
     DWORD written = 0;
     move_cursor(hconsole, col, row);
     set_color(hconsole, attributes);
-    WriteConsoleA(hconsole, text.c_str(), static_cast<DWORD>(text.size()), &written, nullptr);
+    WriteConsoleW(hconsole, text.c_str(), static_cast<DWORD>(text.size()), &written, nullptr);
   }
 
-  std::string pad_or_trim(const std::string& s, std::size_t width)
+  std::wstring pad_or_trim(const std::wstring& s, std::size_t width)
   {
     if (s.size() >= width)
       return s.substr(0, width);
-
-    return s + std::string(width - s.size(), ' ');
+  
+    return s + std::wstring(width - s.size(), L' ');
   }
 
-  std::string make_inner_line(const std::string& content, std::size_t inner_width)
+  std::wstring make_inner_line(const std::wstring& content, std::size_t inner_width)
   {
-    return "│" + pad_or_trim(content, inner_width) + "│";
+    return L"│" + pad_or_trim(content, inner_width) + L"│";
   }
 
   void draw_panel_frame(const ConsoleState& console)
@@ -103,14 +103,14 @@ namespace
     const WORD title_color  = WHITE | INTENSE | BG_BLUE;
     const WORD body_color   = WHITE | INTENSE;
 
-    write_text(console.handle, x, y + 0, "┌" + std::string(inner_w, '─') + "┐", border_color);
-    write_text(console.handle, x, y + 1, make_inner_line(" Keyboard counter", inner_w), title_color);
-    write_text(console.handle, x, y + 2, "├" + std::string(inner_w, '─') + "┤", border_color);
+    write_text(console.handle, x, y + 0, L"┌" + std::wstring(inner_w, L'─') + L"┐", border_color);
+    write_text(console.handle, x, y + 1, make_inner_line(L" Keyboard counter", inner_w), title_color);
+    write_text(console.handle, x, y + 2, L"├" + std::wstring(inner_w, L'─') + L"┤", border_color);
 
     for (SHORT row = 3; row <= 6; ++row)
-      write_text(console.handle, x, y + row, make_inner_line("", inner_w), body_color);
+      write_text(console.handle, x, y + row, make_inner_line(L"", inner_w), body_color);
 
-    write_text(console.handle, x, y + 7, "└" + std::string(inner_w, '─') + "┘", border_color);
+    write_text(console.handle, x, y + 7, L"└" + std::wstring(inner_w, L'─') + L"┘", border_color);
   }
 
   double compute_keys_per_second()
