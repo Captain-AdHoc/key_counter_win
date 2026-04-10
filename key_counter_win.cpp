@@ -132,19 +132,19 @@ namespace
     const SHORT x = kPanelCol;
     const SHORT y = kPanelRow;
     const SHORT inner_w = kPanelWidth - 2;
-
+  
     const auto total = g_key_count.load();
     const double kps = compute_keys_per_second();
-
-    std::ostringstream total_ss;
-    total_ss << " Total key presses: " << total;
-
-    std::ostringstream kps_ss;
-    kps_ss << " Keys/sec (2s avg): " << std::fixed << std::setprecision(2) << kps;
-
-    std::string status = g_running ? " Running" : " Stopped";
-    std::string hint   = " Ctrl+C to exit";
-
+  
+    std::wostringstream total_ss;
+    total_ss << L" Total key presses: " << total;
+  
+    std::wostringstream kps_ss;
+    kps_ss << L" Keys/sec (2s avg): " << std::fixed << std::setprecision(2) << kps;
+  
+    std::wstring status = g_running ? L" Running" : L" Stopped";
+    std::wstring hint   = L" Ctrl+C to exit";
+  
     write_text(console.handle, x, y + 3, make_inner_line(total_ss.str(), inner_w), CYAN | INTENSE);
     write_text(console.handle, x, y + 4, make_inner_line(kps_ss.str(), inner_w), GREEN | INTENSE);
     write_text(console.handle, x, y + 5, make_inner_line(status, inner_w), MAGENTA | INTENSE);
@@ -243,7 +243,7 @@ int main()
 
   set_color(console.handle, console.default_attributes);
   move_cursor(console.handle, 0, kPanelRow + 10);
-  std::cout << "Final count: " << g_key_count.load() << "\n";
+  std::wcout << L"Final count: " << g_key_count.load() << L"\n";
 
   return 0;
 }
