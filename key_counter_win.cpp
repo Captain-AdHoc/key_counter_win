@@ -114,7 +114,7 @@ namespace
     for (SHORT row = 3; row <= 10; ++row)
       write_text(console.handle, x, y + row, make_inner_line(L" ", inner_w), body_color);
 
-    write_text(console.handle, x, y + 10, L"└" + std::wstring(inner_w, L'─') + L"┘", border_color);
+    write_text(console.handle, x, y + 11, L"└" + std::wstring(inner_w, L'─') + L"┘", border_color);
   }
 
   double compute_keys_per_second(int moving_avg_window_ms)
