@@ -31,7 +31,7 @@ namespace
   constexpr SHORT kPanelRow = 2;
   constexpr SHORT kPanelWidth = 34;
   constexpr auto kUiPeriod = std::chrono::milliseconds(100);
-  constexpr auto kMovingAverageWindow = std::chrono::milliseconds(2000);
+  constexpr auto kMovingAverageWindow = std::chrono::milliseconds(10000);
 
   enum Color : WORD
   {
@@ -141,7 +141,7 @@ namespace
     total_ss << L" Total key presses: " << total;
   
     std::wostringstream kps_ss;
-    kps_ss << L" Keys/sec (2s avg): " << std::fixed << std::setprecision(2) << kps;
+    kps_ss << L" Keys/sec (10s avg): " << std::fixed << std::setprecision(2) << kps;
   
     std::wstring status = g_running ? L" Running" : L" Stopped";
     std::wstring hint   = L" Ctrl+C to exit";
