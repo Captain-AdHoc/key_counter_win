@@ -121,7 +121,7 @@ namespace
   {
     auto& samples = g_key_samples[moving_avg_window_ms];
     
-    constexpr auto kMovingAverageWindow = std::chrono::milliseconds(moving_avg_window_ms);
+    auto kMovingAverageWindow = std::chrono::milliseconds(moving_avg_window_ms);
     
     const auto now = clock_type::now();
     const auto cutoff = now - kMovingAverageWindow;
