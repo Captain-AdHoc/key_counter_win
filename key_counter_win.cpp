@@ -13,6 +13,7 @@
 #include <sstream>
 #include <string>
 #include <thread>
+#include <map>
 
 namespace
 {
@@ -25,7 +26,8 @@ namespace
   DWORD g_main_thread_id = 0;
 
   std::mutex g_samples_mutex;
-  std::deque<time_point> g_key_samples;
+  std::map<int, std::deque<time_point>> g_key_samples;
+  std::vector<int> moving_avg_window_sizes_ms { 3'600'000, 60'000, 30'000, 10'000, 2'000 };
 
   constexpr SHORT kPanelCol = 4;
   constexpr SHORT kPanelRow = 2;
@@ -114,18 +116,22 @@ namespace
     write_text(console.handle, x, y + 7, L"└" + std::wstring(inner_w, L'─') + L"┘", border_color);
   }
 
-  double compute_keys_per_second()
+  double compute_keys_per_second(int moving_avg_window_ms)
   {
+    auto& samples = g_key_samples[moving_avg_window_ms];
+    
+    constexpr auto kMovingAverageWindow = std::chrono::milliseconds(moving_avg_window_ms);
+    
     const auto now = clock_type::now();
     const auto cutoff = now - kMovingAverageWindow;
 
     std::lock_guard<std::mutex> lock(g_samples_mutex);
 
-    while (!g_key_samples.empty() && g_key_samples.front() < cutoff)
-      g_key_samples.pop_front();
+    while (!samples.empty() && samples.front() < cutoff)
+      samples.pop_front();
 
     const double seconds = std::chrono::duration<double>(kMovingAverageWindow).count();
-    return static_cast<double>(g_key_samples.size()) / seconds;
+    return static_cast<double>(samples.size()) / seconds;
   }
 
   void render_panel_body(const ConsoleState& console)
@@ -135,21 +141,27 @@ namespace
     const SHORT inner_w = kPanelWidth - 2;
   
     const auto total = g_key_count.load();
-    const double kps = compute_keys_per_second();
   
     std::wostringstream total_ss;
     total_ss << L" Total key presses: " << total;
   
-    std::wostringstream kps_ss;
-    kps_ss << L" Keys/sec (10s avg): " << std::fixed << std::setprecision(2) << kps;
-  
     std::wstring status = g_running ? L" Running" : L" Stopped";
     std::wstring hint   = L" Ctrl+C to exit";
+
+    int y_offs = 3;
   
-    write_text(console.handle, x, y + 3, make_inner_line(total_ss.str(), inner_w), CYAN | INTENSE);
-    write_text(console.handle, x, y + 4, make_inner_line(kps_ss.str(), inner_w), GREEN | INTENSE);
-    write_text(console.handle, x, y + 5, make_inner_line(status, inner_w), MAGENTA | INTENSE);
-    write_text(console.handle, x, y + 6, make_inner_line(hint, inner_w), WHITE);
+    write_text(console.handle, x, y + y_offs++, make_inner_line(total_ss.str(), inner_w), CYAN | INTENSE);
+
+    for (int avg_win_ms : moving_avg_window_sizes_ms)
+    {
+      std::wostringstream kps_ss;
+      const double kps = compute_keys_per_second(avg_win_ms);
+      kps_ss << L" Keys/sec (" << avg_win_ms/1000 << "s avg): " << std::fixed << std::setprecision(2) << kps;
+      write_text(console.handle, x, y + y_offs++, make_inner_line(kps_ss.str(), inner_w), GREEN | INTENSE);
+    }
+    
+    write_text(console.handle, x, y + y_offs++, make_inner_line(status, inner_w), MAGENTA | INTENSE);
+    write_text(console.handle, x, y + y_offs++, make_inner_line(hint, inner_w), WHITE);
   }
 
   LRESULT CALLBACK keyboard_proc(int code, WPARAM wparam, LPARAM lparam)
@@ -160,7 +172,8 @@ namespace
 
       const auto now = clock_type::now();
       std::lock_guard<std::mutex> lock(g_samples_mutex);
-      g_key_samples.push_back(now);
+      for (int avg_win_ms : moving_avg_window_sizes_ms)
+        g_key_samples[avg_win_ms].push_back(now);
     }
 
     return CallNextHookEx(g_hook, code, wparam, lparam);
